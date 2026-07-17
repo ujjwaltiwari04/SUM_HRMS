@@ -7,6 +7,7 @@ import 'package:sum_enterprises/core/routing/app_router.dart';
 import 'package:sum_enterprises/core/theme/app_theme.dart';
 import 'package:sum_enterprises/core/constants/app_constants.dart';
 import 'package:sum_enterprises/features/location/presentation/providers/location_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() {
   // Run the app inside a runZonedGuarded block to catch asynchronous boundary exceptions
@@ -48,6 +49,13 @@ void main() {
         _logGlobalError(innerError, stack);
       }
       _logGlobalError(e, stack);
+    }
+
+    // 1.5. Seed Default Admin User if not already present
+    try {
+      await _seedDefaultAdmin();
+    } catch (e) {
+      debugPrint('Error seeding default admin user: $e');
     }
 
     // 2. Start application wrapped in ProviderScope for Riverpod State Management & DI
@@ -95,5 +103,51 @@ class SumEnterprisesApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
     );
+  }
+}
+
+/// Automatically seeds the default admin user with phone number +918586097283 if not already in database.
+Future<void> _seedDefaultAdmin() async {
+  final firestore = FirebaseFirestore.instance;
+  const phone = '+918586097283';
+
+  // Check if admin already exists by phone
+  final query = await firestore
+      .collection('users')
+      .where('phone', isEqualTo: phone)
+      .limit(1)
+      .get();
+
+  if (query.docs.isEmpty) {
+    // Also check alternate phone field
+    final queryAlt = await firestore
+        .collection('users')
+        .where('phoneNumber', isEqualTo: phone)
+        .limit(1)
+        .get();
+
+    if (queryAlt.docs.isEmpty) {
+      debugPrint('Seeding default admin user with phone: $phone');
+      // Create user document with phone number
+      final docRef = firestore.collection('users').doc('default_admin_uid');
+      await docRef.set({
+        'email': 'admin@sumenterprises.com',
+        'name': 'Default Admin',
+        'fullName': 'Default Admin',
+        'role': 'admin',
+        'phone': phone,
+        'phoneNumber': phone,
+        'isActive': true,
+        'designation': 'System Administrator',
+        'employeeId': 'SUM-ADMIN',
+        'createdAt': DateTime.now().toIso8601String(),
+        'joiningDate': DateTime.now().toIso8601String(),
+      });
+      debugPrint('Default admin user successfully seeded.');
+    } else {
+      debugPrint('Default admin already exists under phoneNumber field.');
+    }
+  } else {
+    debugPrint('Default admin already exists under phone field.');
   }
 }
