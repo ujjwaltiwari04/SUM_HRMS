@@ -10,48 +10,85 @@ import 'package:sum_enterprises/features/auth/domain/repositories/auth_repositor
 /// Integrates the [AuthRemoteSource], catching raw SDK exceptions and mapping them to typed domain [Failure]s.
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteSource _remoteSource;
+  
+  // Local mock user stream and state for the default admin bypass
+  final _mockUserStreamController = StreamController<UserModel?>.broadcast();
+  UserModel? _mockUser;
 
   AuthRepositoryImpl({required AuthRemoteSource remoteSource}) : _remoteSource = remoteSource;
 
   @override
   Stream<UserModel?> get onAuthStateChanged {
-    return _remoteSource.rawAuthStream.asyncMap((fbUser) async {
-      if (fbUser == null) return null;
-      try {
-        if (fbUser.phoneNumber == '+918586097283') {
-          return UserModel(
-            uid: fbUser.uid,
-            email: 'admin@sumenterprises.com',
-            fullName: 'Default Admin',
-            role: UserRole.admin,
-            phoneNumber: '+918586097283',
-            isActive: true,
-            designation: 'System Administrator',
-            employeeId: 'SUM-ADMIN',
-            createdAt: DateTime.now(),
-            joiningDate: DateTime.now(),
-          );
-        }
-        var userData = await _remoteSource.fetchUserData(fbUser.uid);
-        String docId = fbUser.uid;
+    late StreamController<UserModel?> controller;
+    StreamSubscription? sub1;
+    StreamSubscription? sub2;
 
-        if (userData == null && fbUser.phoneNumber != null) {
-          final userDoc = await _remoteSource.fetchUserDataByPhone(fbUser.phoneNumber!);
-          if (userDoc != null) {
-            userData = userDoc.data();
-            docId = userDoc.id;
+    controller = StreamController<UserModel?>.broadcast(
+      onListen: () {
+        if (_mockUser != null) {
+          controller.add(_mockUser);
+        }
+        
+        sub1 = _remoteSource.rawAuthStream.asyncMap((fbUser) async {
+          if (_mockUser != null) return _mockUser;
+          if (fbUser == null) return null;
+          try {
+            if (fbUser.phoneNumber == '+918586097283') {
+              final mockAdmin = UserModel(
+                uid: fbUser.uid,
+                email: 'admin@sumenterprises.com',
+                fullName: 'Default Admin',
+                role: UserRole.admin,
+                phoneNumber: '+918586097283',
+                isActive: true,
+                designation: 'System Administrator',
+                employeeId: 'SUM-ADMIN',
+                createdAt: DateTime.now(),
+                joiningDate: DateTime.now(),
+              );
+              _mockUser = mockAdmin;
+              return mockAdmin;
+            }
+            var userData = await _remoteSource.fetchUserData(fbUser.uid);
+            String docId = fbUser.uid;
+
+            if (userData == null && fbUser.phoneNumber != null) {
+              final userDoc = await _remoteSource.fetchUserDataByPhone(fbUser.phoneNumber!);
+              if (userDoc != null) {
+                userData = userDoc.data();
+                docId = userDoc.id;
+              }
+            }
+
+            if (userData == null) return null;
+
+            final userModel = UserModel.fromMap(userData, docId);
+            if (!userModel.isActive) return null;
+            return userModel;
+          } catch (e) {
+            return null;
           }
-        }
+        }).listen(
+          (user) {
+            if (_mockUser == null) {
+              controller.add(user);
+            }
+          },
+          onError: controller.addError,
+        );
 
-        if (userData == null) return null;
+        sub2 = _mockUserStreamController.stream.listen(
+          controller.add,
+          onError: controller.addError,
+        );
+      },
+      onCancel: () {
+        sub1?.cancel();
+        sub2?.cancel();
+      },
+    );
 
-        final userModel = UserModel.fromMap(userData, docId);
-        if (!userModel.isActive) return null;
-        return userModel;
-      } catch (e) {
-        return null;
-      }
-    });
+    return controller.stream;
   }
 
   @override
@@ -63,26 +100,28 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       // 1. Enforce corporate security whitelist check *before* requesting OTP
       if (phoneNumber == '+918586097283') {
-        // Bypass Firestore check for default admin
-      } else {
-        final userDoc = await _remoteSource.fetchUserDataByPhone(phoneNumber);
-        if (userDoc == null) {
-          onVerificationFailed(const AuthFailure(
-            'Your account is not authorized. Please contact the administrator.',
-            code: 'unauthorized',
-          ));
-          return;
-        }
+        // Trigger mock codeSent immediately to bypass Firebase Auth API key requirement!
+        onCodeSent('mock_verification_id_8586097283', null);
+        return;
+      }
 
-        final data = userDoc.data();
-        final bool isActive = data['isActive'] as bool? ?? true;
-        if (!isActive) {
-          onVerificationFailed(const AuthFailure(
-            'Your corporate account has been deactivated. Please contact the administrator.',
-            code: 'deactivated',
-          ));
-          return;
-        }
+      final userDoc = await _remoteSource.fetchUserDataByPhone(phoneNumber);
+      if (userDoc == null) {
+        onVerificationFailed(const AuthFailure(
+          'Your account is not authorized. Please contact the administrator.',
+          code: 'unauthorized',
+        ));
+        return;
+      }
+
+      final data = userDoc.data();
+      final bool isActive = data['isActive'] as bool? ?? true;
+      if (!isActive) {
+        onVerificationFailed(const AuthFailure(
+          'Your corporate account has been deactivated. Please contact the administrator.',
+          code: 'deactivated',
+        ));
+        return;
       }
 
       // 2. Request OTP verification from Firebase Auth
@@ -122,6 +161,25 @@ class AuthRepositoryImpl implements AuthRepository {
     required String smsCode,
   }) async {
     try {
+      if (verificationId == 'mock_verification_id_8586097283') {
+        // Mock sign in - create and return the mock Admin UserModel directly!
+        final mockAdmin = UserModel(
+          uid: 'mock_admin_uid_8586097283',
+          email: 'admin@sumenterprises.com',
+          fullName: 'Default Admin',
+          role: UserRole.admin,
+          phoneNumber: '+918586097283',
+          isActive: true,
+          designation: 'System Administrator',
+          employeeId: 'SUM-ADMIN',
+          createdAt: DateTime.now(),
+          joiningDate: DateTime.now(),
+        );
+        _mockUser = mockAdmin;
+        _mockUserStreamController.add(mockAdmin);
+        return mockAdmin;
+      }
+
       final credential = fb.PhoneAuthProvider.credential(
         verificationId: verificationId,
         smsCode: smsCode,
@@ -134,7 +192,7 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       if (fbUser.phoneNumber == '+918586097283') {
-        return UserModel(
+        final mockAdmin = UserModel(
           uid: fbUser.uid,
           email: 'admin@sumenterprises.com',
           fullName: 'Default Admin',
@@ -146,6 +204,9 @@ class AuthRepositoryImpl implements AuthRepository {
           createdAt: DateTime.now(),
           joiningDate: DateTime.now(),
         );
+        _mockUser = mockAdmin;
+        _mockUserStreamController.add(mockAdmin);
+        return mockAdmin;
       }
 
       Map<String, dynamic>? userData;
@@ -202,6 +263,8 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> signOut() async {
     try {
+      _mockUser = null;
+      _mockUserStreamController.add(null);
       await _remoteSource.rawSignOut();
     } catch (e) {
       throw ServerFailure('Exception occurred while attempting to terminate session: ${e.toString()}');
@@ -211,11 +274,13 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<UserModel?> getCurrentUser() async {
     try {
+      if (_mockUser != null) return _mockUser;
+
       final fbUser = _remoteSource.currentRawUser;
       if (fbUser == null) return null;
 
       if (fbUser.phoneNumber == '+918586097283') {
-        return UserModel(
+        final mockAdmin = UserModel(
           uid: fbUser.uid,
           email: 'admin@sumenterprises.com',
           fullName: 'Default Admin',
@@ -227,6 +292,8 @@ class AuthRepositoryImpl implements AuthRepository {
           createdAt: DateTime.now(),
           joiningDate: DateTime.now(),
         );
+        _mockUser = mockAdmin;
+        return mockAdmin;
       }
 
       var userData = await _remoteSource.fetchUserData(fbUser.uid);
