@@ -17,7 +17,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _phoneController = TextEditingController();
+  final _phoneController = TextEditingController(text: '+91 ');
 
   @override
   void dispose() {
@@ -163,7 +163,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ],
                             decoration: InputDecoration(
                               labelText: 'Registered Phone Number',
-                              hintText: '+1 555 123 4567',
+                              hintText: '+91 98765 43210',
                               prefixIcon: Icon(
                                 Icons.phone_android_rounded,
                                 color: theme.colorScheme.primary,
