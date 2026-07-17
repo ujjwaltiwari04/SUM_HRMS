@@ -1,0 +1,6 @@
+{
+  "name": "SUM Enterprises Flutter Architecture Explorer",
+  "description": "Interactive Clean Architecture visualizer, code explorer, and developer dashboard for the SUM ENTERPRISES Flutter & Firebase enterprise foundation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
