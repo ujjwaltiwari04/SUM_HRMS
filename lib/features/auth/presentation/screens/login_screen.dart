@@ -110,10 +110,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             width: 1.5,
                           ),
                         ),
-                        child: Icon(
-                          Icons.corporate_fare_rounded,
-                          size: 48,
-                          color: theme.colorScheme.primary,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(22),
+                          child: Image.asset(
+                            'assets/images/LOGO.jpg',
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     ),
