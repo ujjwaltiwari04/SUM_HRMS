@@ -7,7 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:sum_enterprises/core/constants/app_constants.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:sum_enterprises/core/widgets/custom_button.dart';
 import 'package:sum_enterprises/features/auth/domain/models/user_model.dart';
 import 'package:sum_enterprises/features/auth/presentation/providers/auth_provider.dart';
@@ -142,24 +142,14 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Stylized Mini Logo
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.corporate_fare_rounded,
-                              color: theme.colorScheme.primary,
-                              size: 24,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'SUM',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.primary,
-                                letterSpacing: 1.5,
-                              ),
-                            ),
-                          ],
+                        // Company Name Text
+                        Text(
+                          'SUM ENTERPRISES',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
+                            letterSpacing: 2.0,
+                          ),
                         ),
                         // Status Badge
                         Container(
@@ -203,7 +193,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                     Text(
                       '${greeting()},',
                       key: const ValueKey('employee_greeting_label'),
@@ -211,14 +201,57 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      user?.fullName ?? 'Sum Employee',
-                      key: const ValueKey('employee_display_name'),
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurface,
-                      ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            user?.fullName ?? 'Sum Employee',
+                            key: const ValueKey('employee_display_name'),
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        // Logo on right side, below status badge
+                        Container(
+                          height: 48,
+                          width: 48,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: theme.colorScheme.primary.withOpacity(0.15),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12.5),
+                            child: Image.asset(
+                              'assets/images/LOGO.jpg',
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(
+                                  Icons.corporate_fare_rounded,
+                                  color: theme.colorScheme.primary,
+                                  size: 24,
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     Divider(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
@@ -920,6 +953,43 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                         ],
                       ),
                       const SizedBox(height: 16),
+
+                      // Open in Google Maps button
+                      ElevatedButton.icon(
+                        key: const ValueKey('tracking_open_maps_btn'),
+                        onPressed: () async {
+                          final uri = Uri.parse(
+                            'geo:${location.latitude},${location.longitude}?q=${location.latitude},${location.longitude}',
+                          );
+                          final webUri = Uri.parse(
+                            'https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}',
+                          );
+                          try {
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri);
+                            } else {
+                              await launchUrl(webUri, mode: LaunchMode.externalApplication);
+                            }
+                          } catch (_) {
+                            await launchUrl(webUri, mode: LaunchMode.externalApplication);
+                          }
+                        },
+                        icon: const Icon(Icons.map_rounded, size: 18),
+                        label: const Text(
+                          'VIEW ON GOOGLE MAPS',
+                          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5, fontSize: 13),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          elevation: 0,
+                          backgroundColor: theme.colorScheme.primary.withOpacity(0.08),
+                          foregroundColor: theme.colorScheme.primary,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
 
                       // Manual refresh button
                       OutlinedButton.icon(

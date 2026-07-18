@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:sum_enterprises/features/attendance/domain/models/attendance_model.dart';
 import 'package:sum_enterprises/features/attendance/presentation/providers/attendance_provider.dart';
 
@@ -256,27 +257,50 @@ class AttendanceHistoryScreen extends ConsumerWidget {
                   ],
                 ),
                 if (hasLocation)
-                  Container(
-                    key: ValueKey('location_badge_${record.attendanceId}'),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.06),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.gps_fixed_rounded, size: 10, color: theme.colorScheme.primary),
-                        const SizedBox(width: 4),
-                        Text(
-                          'GPS Cap ${inAccuracy != null ? '±${inAccuracy.toStringAsFixed(0)}m' : ''}',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.primary,
+                  GestureDetector(
+                    onTap: () async {
+                      final lat = record.checkInLatitude!;
+                      final lng = record.checkInLongitude!;
+                      final uri = Uri.parse(
+                        'geo:$lat,$lng?q=$lat,$lng',
+                      );
+                      final webUri = Uri.parse(
+                        'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+                      );
+                      try {
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri);
+                        } else {
+                          await launchUrl(webUri, mode: LaunchMode.externalApplication);
+                        }
+                      } catch (_) {
+                        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+                      }
+                    },
+                    child: Container(
+                      key: ValueKey('location_badge_${record.attendanceId}'),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withOpacity(0.06),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.map_rounded, size: 10, color: theme.colorScheme.primary),
+                          const SizedBox(width: 4),
+                          Text(
+                            'View on Map',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 2),
+                          Icon(Icons.open_in_new_rounded, size: 8, color: theme.colorScheme.primary),
+                        ],
+                      ),
                     ),
                   ),
               ],

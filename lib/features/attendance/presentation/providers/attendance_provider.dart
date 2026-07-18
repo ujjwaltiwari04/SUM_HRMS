@@ -737,9 +737,20 @@ final adminDailyAttendanceProvider = Provider.family<List<EmployeeAttendanceRow>
   final attendanceLogs = ref.watch(adminAttendanceListProvider((date: dateStr, employeeId: null))).value ?? [];
 
   final List<EmployeeAttendanceRow> rows = [];
+  final parsedTargetDate = DateTime.tryParse(dateStr);
+
   for (final emp in employees) {
     // Exclude administrators from the list
     if (emp.isAdmin) continue;
+
+    // Exclude employees who have not joined yet on the target date
+    if (parsedTargetDate != null && emp.joiningDate != null) {
+      final dateOnlyTarget = DateTime(parsedTargetDate.year, parsedTargetDate.month, parsedTargetDate.day);
+      final dateOnlyJoining = DateTime(emp.joiningDate!.year, emp.joiningDate!.month, emp.joiningDate!.day);
+      if (dateOnlyTarget.isBefore(dateOnlyJoining)) {
+        continue;
+      }
+    }
 
     final log = attendanceLogs.firstWhere(
       (a) => a.employeeId == emp.uid,

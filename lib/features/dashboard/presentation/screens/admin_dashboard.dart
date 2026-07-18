@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:sum_enterprises/core/constants/app_constants.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:sum_enterprises/features/auth/domain/models/user_model.dart';
 import 'package:sum_enterprises/features/auth/presentation/providers/auth_provider.dart';
 import 'package:sum_enterprises/features/employee/presentation/providers/employee_provider.dart';
-import 'package:sum_enterprises/features/location/domain/models/location_model.dart';
 import 'package:sum_enterprises/features/location/presentation/providers/location_provider.dart';
 
 /// Comprehensive Production-Ready Admin Dashboard Screen.
@@ -46,30 +45,72 @@ class AdminDashboard extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Welcome Header Section
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'SUM ENTERPRISES',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      letterSpacing: 2.5,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'SUM ENTERPRISES',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            letterSpacing: 2.5,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${greeting()},',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        Text(
+                          user?.fullName ?? 'Administrator',
+                          key: const ValueKey('admin_header_name'),
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${greeting()},',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                  const SizedBox(width: 16),
+                  Container(
+                    height: 56,
+                    width: 56,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: theme.colorScheme.primary.withOpacity(0.12),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ),
-                  Text(
-                    user?.fullName ?? 'Administrator',
-                    key: const ValueKey('admin_header_name'),
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14.5),
+                      child: Image.asset(
+                        'assets/images/LOGO.jpg',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(
+                            Icons.corporate_fare_rounded,
+                            color: theme.colorScheme.primary,
+                            size: 28,
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ],
@@ -419,27 +460,52 @@ class AdminDashboard extends ConsumerWidget {
                                   ],
                                 ),
                                 const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.location_on_rounded,
-                                      size: 11,
-                                      color: theme.colorScheme.primary.withOpacity(0.7),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Expanded(
-                                      child: Text(
-                                        '${location.latitude.toStringAsFixed(5)}, ${location.longitude.toStringAsFixed(5)}',
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          fontFamily: 'JetBrains Mono',
-                                          color: theme.colorScheme.onSurfaceVariant,
-                                          fontSize: 10.5,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                GestureDetector(
+                                  onTap: () async {
+                                    final uri = Uri.parse(
+                                      'geo:${location.latitude},${location.longitude}?q=${location.latitude},${location.longitude}',
+                                    );
+                                    final webUri = Uri.parse(
+                                      'https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}',
+                                    );
+                                    try {
+                                      if (await canLaunchUrl(uri)) {
+                                        await launchUrl(uri);
+                                      } else {
+                                        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+                                      }
+                                    } catch (_) {
+                                      await launchUrl(webUri, mode: LaunchMode.externalApplication);
+                                    }
+                                  },
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.location_on_rounded,
+                                        size: 11,
+                                        color: theme.colorScheme.primary.withOpacity(0.7),
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          '${location.latitude.toStringAsFixed(5)}, ${location.longitude.toStringAsFixed(5)}',
+                                          style: theme.textTheme.bodySmall?.copyWith(
+                                            fontFamily: 'JetBrains Mono',
+                                            color: theme.colorScheme.primary,
+                                            fontSize: 10.5,
+                                            decoration: TextDecoration.underline,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.open_in_new_rounded,
+                                        size: 10,
+                                        color: theme.colorScheme.primary.withOpacity(0.7),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             );

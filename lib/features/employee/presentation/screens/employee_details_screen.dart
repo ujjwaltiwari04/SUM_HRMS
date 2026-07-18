@@ -35,11 +35,13 @@ class _EmployeeDetailsScreenState extends ConsumerState<EmployeeDetailsScreen> {
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
   late TextEditingController _designationController;
+  late TextEditingController _employeeIdController;
   String? _selectedDepartment;
 
   final _nameFocusNode = FocusNode();
   final _phoneFocusNode = FocusNode();
   final _designationFocusNode = FocusNode();
+  final _employeeIdFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -47,6 +49,7 @@ class _EmployeeDetailsScreenState extends ConsumerState<EmployeeDetailsScreen> {
     _nameController = TextEditingController();
     _phoneController = TextEditingController();
     _designationController = TextEditingController();
+    _employeeIdController = TextEditingController();
   }
 
   @override
@@ -54,9 +57,11 @@ class _EmployeeDetailsScreenState extends ConsumerState<EmployeeDetailsScreen> {
     _nameController.dispose();
     _phoneController.dispose();
     _designationController.dispose();
+    _employeeIdController.dispose();
     _nameFocusNode.dispose();
     _phoneFocusNode.dispose();
     _designationFocusNode.dispose();
+    _employeeIdFocusNode.dispose();
     super.dispose();
   }
 
@@ -64,6 +69,7 @@ class _EmployeeDetailsScreenState extends ConsumerState<EmployeeDetailsScreen> {
     _nameController.text = employee.fullName;
     _phoneController.text = employee.phoneNumber ?? '';
     _designationController.text = employee.designation;
+    _employeeIdController.text = employee.employeeId;
     _selectedDepartment = employee.department;
     setState(() {
       _isEditMode = true;
@@ -89,6 +95,7 @@ class _EmployeeDetailsScreenState extends ConsumerState<EmployeeDetailsScreen> {
     return _nameController.text != employee.fullName ||
         _phoneController.text != (employee.phoneNumber ?? '') ||
         _designationController.text != employee.designation ||
+        _employeeIdController.text != employee.employeeId ||
         _selectedDepartment != employee.department;
   }
 
@@ -120,6 +127,20 @@ class _EmployeeDetailsScreenState extends ConsumerState<EmployeeDetailsScreen> {
     if (_formKey.currentState?.validate() ?? false) {
       FocusScope.of(context).unfocus();
 
+      // Check if employee ID is unique across other users
+      final newId = _employeeIdController.text.trim().toUpperCase();
+      final existingEmployees = ref.read(employeeListStreamProvider).value ?? [];
+      if (existingEmployees.any((e) => e.uid != employee.uid && e.employeeId.toUpperCase() == newId)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Employee ID already exists for another employee.'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
       final confirm = await showDialog<bool>(
         context: context,
         builder: (context) {
@@ -147,6 +168,7 @@ class _EmployeeDetailsScreenState extends ConsumerState<EmployeeDetailsScreen> {
           fullName: _nameController.text.trim(),
           phoneNumber: _phoneController.text.trim(),
           designation: _designationController.text.trim(),
+          employeeId: _employeeIdController.text.trim(),
           department: _selectedDepartment,
         );
 
@@ -532,9 +554,29 @@ class _EmployeeDetailsScreenState extends ConsumerState<EmployeeDetailsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // Employee ID (Read Only Visual)
-                            _buildDetailTile(theme, 'Employee ID (Read Only)', employee.employeeId, Icons.badge_rounded),
-                            const SizedBox(height: 8),
+                            // Employee ID (Editable Field)
+                            TextFormField(
+                              key: const ValueKey('edit_field_employee_id'),
+                              controller: _employeeIdController,
+                              focusNode: _employeeIdFocusNode,
+                              textInputAction: TextInputAction.next,
+                              onChanged: (val) => setState(() {}),
+                              onFieldSubmitted: (_) => FocusScope.of(context).requestFocus(_nameFocusNode),
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Please enter the Employee ID.';
+                                }
+                                return null;
+                              },
+                              decoration: InputDecoration(
+                                labelText: 'Employee ID',
+                                prefixIcon: const Icon(Icons.badge_rounded),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
 
                             // Full Name
                             TextFormField(
@@ -724,7 +766,7 @@ class _EmployeeDetailsScreenState extends ConsumerState<EmployeeDetailsScreen> {
                         id: 'attendance',
                         label: 'Attendance Records',
                         icon: Icons.history_rounded,
-                        route: '/coming-soon/Employee Attendance',
+                        route: '/admin/attendance',
                       ),
                       _buildManagementButton(
                         context,
@@ -1311,6 +1353,12 @@ class _EmployeeDetailsScreenState extends ConsumerState<EmployeeDetailsScreen> {
         padding: const EdgeInsets.all(20.0),
         child: todayAttendanceAsync.when(
           data: (record) {
+            final today = DateTime.now();
+            final todayOnly = DateTime(today.year, today.month, today.day);
+            final joiningOnly = widget.employee.joiningDate != null 
+                ? DateTime(widget.employee.joiningDate!.year, widget.employee.joiningDate!.month, widget.employee.joiningDate!.day)
+                : null;
+
             final hasCheckIn = record != null && record.checkInTime != null;
             final hasCheckOut = record != null && record.checkOutTime != null;
             final isCheckedIn = record != null && record.status == 'Present' && record.checkOutTime == null;
@@ -1318,7 +1366,10 @@ class _EmployeeDetailsScreenState extends ConsumerState<EmployeeDetailsScreen> {
             String statusText = 'Absent / Not Checked In';
             Color statusColor = theme.colorScheme.error;
 
-            if (record != null) {
+            if (joiningOnly != null && todayOnly.isBefore(joiningOnly)) {
+              statusText = 'Not Joined Yet';
+              statusColor = Colors.grey;
+            } else if (record != null) {
               if (record.status == 'Present') {
                 if (isCheckedIn) {
                   statusText = 'Checked In';
