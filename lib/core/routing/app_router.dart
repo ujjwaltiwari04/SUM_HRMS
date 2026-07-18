@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sum_enterprises/features/auth/domain/models/user_model.dart';
 import 'package:sum_enterprises/features/auth/presentation/providers/auth_provider.dart';
 import 'package:sum_enterprises/features/auth/presentation/screens/login_screen.dart';
-import 'package:sum_enterprises/features/auth/presentation/screens/otp_screen.dart';
 import 'package:sum_enterprises/features/dashboard/presentation/screens/admin_dashboard.dart';
 import 'package:sum_enterprises/features/dashboard/presentation/screens/employee_dashboard.dart';
 import 'package:sum_enterprises/features/placeholder/presentation/screens/coming_soon_screen.dart';
@@ -32,22 +31,19 @@ final appRouterPro = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final String location = state.uri.toString();
       final bool isLoggingIn = location == '/login';
-      final bool isOtp = location == '/otp';
       final bool isSplash = location == '/splash';
 
       return authState.when(
         data: (user) {
           // If no authenticated user is present
           if (user == null) {
-            // Permit staying on the OTP screen if a verification sequence is underway
-            if (isOtp) return null;
             // Prevent endless redirection loops
             if (isLoggingIn) return null;
             return '/login';
           }
 
-          // If the user IS authenticated and trying to hit Login, OTP or Splash, route them to their respective Dashboard
-          if (isLoggingIn || isOtp || isSplash) {
+          // If the user IS authenticated and trying to hit Login or Splash, route them to their respective Dashboard
+          if (isLoggingIn || isSplash) {
             return user.isAdmin ? '/admin/dashboard' : '/employee/dashboard';
           }
 
@@ -78,11 +74,6 @@ final appRouterPro = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
-      ),
-
-      GoRoute(
-        path: '/otp',
-        builder: (context, state) => const OtpScreen(),
       ),
 
       // Admin Boundary (Shell or standard views)

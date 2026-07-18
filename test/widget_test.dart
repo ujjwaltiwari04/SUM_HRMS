@@ -1,31 +1,46 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:sum_enterprises/main.dart';
+import 'package:sum_enterprises/features/auth/domain/models/user_model.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const ProviderScope(child: SumEnterprisesApp()));
+  group('UserModel Tests', () {
+    test('fromMap parses admin role and active status correctly', () {
+      final map = {
+        'email': 'admin@sumenterprises.com',
+        'name': 'Admin User',
+        'role': 'admin',
+        'phone': '+918586097283',
+        'isActive': true,
+        'designation': 'System Administrator',
+      };
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+      final user = UserModel.fromMap(map, 'admin_uid');
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+      expect(user.uid, 'admin_uid');
+      expect(user.email, 'admin@sumenterprises.com');
+      expect(user.fullName, 'Admin User');
+      expect(user.role, UserRole.admin);
+      expect(user.isAdmin, true);
+      expect(user.isEmployee, false);
+      expect(user.phoneNumber, '+918586097283');
+      expect(user.isActive, true);
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    test('fromMap defaults to employee role and fallback employeeId', () {
+      final map = {
+        'email': 'emp@sumenterprises.com',
+        'name': 'Employee User',
+        'role': 'employee',
+        'phone': '+919999999999',
+        'isActive': true,
+      };
+
+      final user = UserModel.fromMap(map, 'emp_uid_long');
+
+      expect(user.uid, 'emp_uid_long');
+      expect(user.role, UserRole.employee);
+      expect(user.isAdmin, false);
+      expect(user.isEmployee, true);
+      expect(user.employeeId, 'SUM-EMP_U');
+    });
   });
 }

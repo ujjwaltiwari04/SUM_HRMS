@@ -24,18 +24,28 @@ class EmployeeRepositoryImpl implements EmployeeRepository {
   }
 
   @override
-  Future<void> registerEmployee(UserModel employee) async {
-    // Check if the document already exists with the given phone
-    final query = await _firestore
-        .collection(AppConstants.collectionUsers)
-        .where('phone', isEqualTo: employee.phoneNumber)
-        .get();
+  Future<void> registerEmployee(UserModel employee, {String? tempPassword}) async {
+    // EXTENSION POINT:
+    // For Version 1, we assume the Firebase Authentication user account already exists.
+    // In future backend integration, trigger server-side Firebase Auth account creation here.
+    // E.g., send a request to a Cloud Function or private API endpoint:
+    // final backendResult = await _backendService.createAuthAccount(email: employee.email, password: tempPassword);
+    // final String newUid = backendResult.uid;
+    // employee = employee.copyWith(uid: newUid);
 
-    if (query.docs.isNotEmpty) {
-      throw Exception('An employee with this phone number is already registered.');
+    // 1. Check if the document already exists with the given email
+    if (employee.email.isNotEmpty) {
+      final query = await _firestore
+          .collection(AppConstants.collectionUsers)
+          .where('email', isEqualTo: employee.email)
+          .get();
+
+      if (query.docs.isNotEmpty) {
+        throw Exception('An employee with this email address is already registered.');
+      }
     }
 
-    // Insert new document. Let firestore auto-generate document ID if empty, or use uid if defined.
+    // 2. Insert new document. Use uid if defined, otherwise auto-generate.
     final docRef = employee.uid.isNotEmpty 
         ? _firestore.collection(AppConstants.collectionUsers).doc(employee.uid)
         : _firestore.collection(AppConstants.collectionUsers).doc();

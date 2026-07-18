@@ -8,6 +8,7 @@ import 'package:sum_enterprises/core/theme/app_theme.dart';
 import 'package:sum_enterprises/core/constants/app_constants.dart';
 import 'package:sum_enterprises/features/location/presentation/providers/location_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'firebase_options.dart';
 
 void main() {
   // Run the app inside a runZonedGuarded block to catch asynchronous boundary exceptions
@@ -29,25 +30,11 @@ void main() {
     try {
       // In a real Android production environment, compile-time configurations 
       // are auto-injected by firebase_core from google-services.json.
-      await Firebase.initializeApp();
-      debugPrint('Firebase Core successfully initialized.');
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      debugPrint("Firebase initialized successfully.");
     } catch (e, stack) {
-      debugPrint('Error initializing Firebase Core default configuration: $e');
-      debugPrint('Attempting to initialize Firebase programmatically with fallback options...');
-      try {
-        await Firebase.initializeApp(
-          options: const FirebaseOptions(
-            apiKey: "AIzaSyDummyKeyForLocalCompilationPurposeOnly",
-            appId: "1:1234567890:android:abcdef123456",
-            messagingSenderId: "1234567890",
-            projectId: "sum-enterprises-mock",
-          ),
-        );
-        debugPrint('Firebase Core successfully initialized with programmatic fallback.');
-      } catch (innerError) {
-        debugPrint('Firebase Core programmatic fallback failed: $innerError');
-        _logGlobalError(innerError, stack);
-      }
       _logGlobalError(e, stack);
     }
 

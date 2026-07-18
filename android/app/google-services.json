@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "751052003174",
+    "project_id": "sum-enterprises",
+    "storage_bucket": "sum-enterprises.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:751052003174:android:86f06bad9a309f51a15aa7",
+        "android_client_info": {
+          "package_name": "com.example.sum_enterprises"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBACz8rO5sRxgSWL9G6_3jZnD9PVGyOcog"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

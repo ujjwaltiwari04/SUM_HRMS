@@ -6,5 +6,6 @@ abstract class EmployeeRepository {
   Stream<List<UserModel>> streamEmployees();
   
   /// Helper to add a new employee profile to Firestore corporate directory.
-  Future<void> registerEmployee(UserModel employee);
+  /// Support optional temporary password for future server-side auth registration.
+  Future<void> registerEmployee(UserModel employee, {String? tempPassword});
 }
