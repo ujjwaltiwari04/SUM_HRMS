@@ -53,8 +53,19 @@ class AttendanceDetailScreen extends StatelessWidget {
         ? DateFormat('hh:mm:ss a').format(attendance.checkOutTime!)
         : 'Active Shift';
 
-    final isCheckedIn = attendance.status == 'Checked In';
-    final statusColor = isCheckedIn ? Colors.green : Colors.blueGrey;
+    final isCheckedIn = attendance.status == 'Present' && attendance.checkInTime != null && attendance.checkOutTime == null;
+    final isCheckedOut = attendance.status == 'Present' && attendance.checkOutTime != null;
+
+    Color statusColor = Colors.grey;
+    if (attendance.status == 'Present') {
+      statusColor = isCheckedIn ? Colors.green : Colors.blueGrey;
+    } else if (attendance.status == 'Absent') {
+      statusColor = theme.colorScheme.error;
+    } else if (attendance.status == 'Leave') {
+      statusColor = Colors.purple;
+    } else if (attendance.status == 'Half Day') {
+      statusColor = Colors.blue;
+    }
 
     return Scaffold(
       key: const ValueKey('attendance_detail_scaffold'),
@@ -123,7 +134,9 @@ class AttendanceDetailScreen extends StatelessWidget {
                           border: Border.all(color: statusColor.withOpacity(0.3)),
                         ),
                         child: Text(
-                          attendance.status.toUpperCase(),
+                          attendance.status == 'Present'
+                              ? (isCheckedIn ? 'CHECKED IN' : 'CHECKED OUT')
+                              : attendance.status.toUpperCase(),
                           style: TextStyle(
                             color: statusColor,
                             fontSize: 11,

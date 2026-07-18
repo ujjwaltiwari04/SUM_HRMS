@@ -54,7 +54,7 @@ class LiveTrackingService {
     _ref.listen(todayAttendanceStreamProvider, (previous, next) {
       next.when(
         data: (attendance) {
-          final isCheckedIn = attendance != null && attendance.status == 'Checked In';
+          final isCheckedIn = attendance != null && attendance.status == 'Present' && attendance.checkInTime != null && attendance.checkOutTime == null;
           if (isCheckedIn) {
             _startTracking();
           } else {

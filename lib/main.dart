@@ -38,11 +38,13 @@ void main() {
       _logGlobalError(e, stack);
     }
 
-    // 1.5. Seed Default Admin User if not already present
-    try {
-      await _seedDefaultAdmin();
-    } catch (e) {
-      debugPrint('Error seeding default admin user: $e');
+    // 1.5. Seed Default Admin User if not already present (development/debug only)
+    if (kDebugMode) {
+      try {
+        await _seedDefaultAdmin();
+      } catch (e) {
+        debugPrint('Error seeding default admin user: $e');
+      }
     }
 
     // 2. Start application wrapped in ProviderScope for Riverpod State Management & DI
@@ -98,29 +100,15 @@ Future<void> _seedDefaultAdmin() async {
   final firestore = FirebaseFirestore.instance;
   const phone = '+918586097283';
 
-  // Check if admin already exists by phone
-  final query = await firestore
-      .collection('users')
-      .where('phone', isEqualTo: phone)
-      .limit(1)
-      .get();
-
-  if (query.docs.isEmpty) {
-    // Also check alternate phone field
-    final queryAlt = await firestore
-        .collection('users')
-        .where('phoneNumber', isEqualTo: phone)
-        .limit(1)
-        .get();
-
-    if (queryAlt.docs.isEmpty) {
-      debugPrint('Seeding default admin user with phone: $phone');
-      // Create user document with phone number
-      final docRef = firestore.collection('users').doc('default_admin_uid');
-      await docRef.set({
-        'email': 'admin@sumenterprises.com',
-        'name': 'Default Admin',
-        'fullName': 'Default Admin',
+  // 1. Seed default ujjwaltiwari2014@gmail.com admin account
+  try {
+    final ujjwalDoc = await firestore.collection('users').doc('D6mXOgI14HR3UF9kwiXcaG2caW13').get();
+    if (!ujjwalDoc.exists) {
+      debugPrint('Seeding primary admin user: ujjwaltiwari2014@gmail.com');
+      await firestore.collection('users').doc('D6mXOgI14HR3UF9kwiXcaG2caW13').set({
+        'email': 'ujjwaltiwari2014@gmail.com',
+        'name': 'Ujjwal Tiwari',
+        'fullName': 'Ujjwal Tiwari',
         'role': 'admin',
         'phone': phone,
         'phoneNumber': phone,
@@ -130,11 +118,53 @@ Future<void> _seedDefaultAdmin() async {
         'createdAt': DateTime.now().toIso8601String(),
         'joiningDate': DateTime.now().toIso8601String(),
       });
-      debugPrint('Default admin user successfully seeded.');
+      debugPrint('Primary admin user successfully seeded.');
     } else {
-      debugPrint('Default admin already exists under phoneNumber field.');
+      debugPrint('Primary admin user already exists in Firestore.');
     }
-  } else {
-    debugPrint('Default admin already exists under phone field.');
+  } catch (e) {
+    debugPrint('Error seeding primary admin user: $e');
+  }
+
+  // 2. Check if default_admin_uid already exists by phone
+  try {
+    final query = await firestore
+        .collection('users')
+        .where('phone', isEqualTo: phone)
+        .limit(1)
+        .get();
+
+    if (query.docs.isEmpty) {
+      final queryAlt = await firestore
+          .collection('users')
+          .where('phoneNumber', isEqualTo: phone)
+          .limit(1)
+          .get();
+
+      if (queryAlt.docs.isEmpty) {
+        debugPrint('Seeding default fallback admin user with phone: $phone');
+        final docRef = firestore.collection('users').doc('default_admin_uid');
+        await docRef.set({
+          'email': 'admin@sumenterprises.com',
+          'name': 'Default Admin',
+          'fullName': 'Default Admin',
+          'role': 'admin',
+          'phone': phone,
+          'phoneNumber': phone,
+          'isActive': true,
+          'designation': 'System Administrator',
+          'employeeId': 'SUM-ADMIN',
+          'createdAt': DateTime.now().toIso8601String(),
+          'joiningDate': DateTime.now().toIso8601String(),
+        });
+        debugPrint('Default fallback admin user successfully seeded.');
+      } else {
+        debugPrint('Default admin already exists under phoneNumber field.');
+      }
+    } else {
+      debugPrint('Default admin already exists under phone field.');
+    }
+  } catch (e) {
+    debugPrint('Error seeding default fallback admin: $e');
   }
 }

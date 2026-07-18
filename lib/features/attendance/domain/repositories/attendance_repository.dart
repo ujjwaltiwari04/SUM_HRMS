@@ -17,5 +17,35 @@ abstract class AttendanceRepository {
   Future<void> checkIn(AttendanceModel attendance);
 
   /// Record check-out event
-  Future<void> checkOut(String attendanceId, DateTime checkOutTime, double lat, double lng, double accuracy, String workingHours);
+  Future<void> checkOut(String attendanceId, DateTime checkOutTime, double lat, double lng, double accuracy);
+
+  /// Manually override check-in for an employee (admin only)
+  Future<void> overrideCheckIn({
+    required String employeeId,
+    required String employeeName,
+    required String date,
+    required DateTime checkInTime,
+    required String reason,
+    required String adminUid,
+  });
+
+  /// Manually override check-out for an employee (admin only)
+  Future<void> overrideCheckOut({
+    required String attendanceId,
+    required DateTime checkOutTime,
+    required String reason,
+    required String adminUid,
+  });
+
+  /// Manually override any attendance status (admin only)
+  Future<void> overrideAttendance({
+    required String employeeId,
+    required String employeeName,
+    required String date,
+    required String status, // 'Present' | 'Absent' | 'Leave' | 'Half Day'
+    required String reason,
+    required String adminUid,
+    DateTime? checkInTime,
+    DateTime? checkOutTime,
+  });
 }

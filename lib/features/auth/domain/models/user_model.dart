@@ -21,6 +21,10 @@ class UserModel {
   final String designation;
   final String employeeId;
   final DateTime? joiningDate;
+  final String? department;
+  final String? createdBy;
+  final DateTime? lastUpdatedAt;
+  final String? lastUpdatedBy;
 
   const UserModel({
     required this.uid,
@@ -34,6 +38,10 @@ class UserModel {
     this.designation = 'Staff Specialist',
     this.employeeId = '',
     this.joiningDate,
+    this.department,
+    this.createdBy,
+    this.lastUpdatedAt,
+    this.lastUpdatedBy,
   });
 
   /// Computed helper to enforce role boundary rules inside routes or controllers
@@ -68,6 +76,12 @@ class UserModel {
       joiningDate: map['joiningDate'] != null 
           ? DateTime.tryParse(map['joiningDate'].toString()) 
           : (map['createdAt'] != null ? DateTime.tryParse(map['createdAt'].toString()) : null),
+      department: map['department'] as String?,
+      createdBy: map['createdBy'] as String?,
+      lastUpdatedAt: map['lastUpdatedAt'] != null 
+          ? DateTime.tryParse(map['lastUpdatedAt'].toString()) 
+          : null,
+      lastUpdatedBy: map['lastUpdatedBy'] as String?,
     );
   }
 
@@ -86,6 +100,10 @@ class UserModel {
       'designation': designation,
       'employeeId': employeeId,
       'joiningDate': joiningDate?.toIso8601String(),
+      'department': department,
+      'createdBy': createdBy,
+      'lastUpdatedAt': lastUpdatedAt?.toIso8601String(),
+      'lastUpdatedBy': lastUpdatedBy,
     };
   }
 
@@ -101,6 +119,10 @@ class UserModel {
     String? designation,
     String? employeeId,
     DateTime? joiningDate,
+    String? department,
+    String? createdBy,
+    DateTime? lastUpdatedAt,
+    String? lastUpdatedBy,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -114,6 +136,10 @@ class UserModel {
       designation: designation ?? this.designation,
       employeeId: employeeId ?? this.employeeId,
       joiningDate: joiningDate ?? this.joiningDate,
+      department: department ?? this.department,
+      createdBy: createdBy ?? this.createdBy,
+      lastUpdatedAt: lastUpdatedAt ?? this.lastUpdatedAt,
+      lastUpdatedBy: lastUpdatedBy ?? this.lastUpdatedBy,
     );
   }
 
@@ -129,7 +155,11 @@ class UserModel {
         other.profileImageUrl == profileImageUrl &&
         other.isActive == isActive &&
         other.designation == designation &&
-        other.employeeId == employeeId;
+        other.employeeId == employeeId &&
+        other.department == department &&
+        other.createdBy == createdBy &&
+        other.lastUpdatedAt == lastUpdatedAt &&
+        other.lastUpdatedBy == lastUpdatedBy;
   }
 
   @override
@@ -144,6 +174,10 @@ class UserModel {
       isActive,
       designation,
       employeeId,
+      department,
+      createdBy,
+      lastUpdatedAt,
+      lastUpdatedBy,
     );
   }
 }

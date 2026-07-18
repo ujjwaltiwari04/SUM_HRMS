@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:sum_enterprises/core/constants/app_constants.dart';
 import 'package:sum_enterprises/core/error/failures.dart';
 import 'package:sum_enterprises/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:sum_enterprises/features/auth/data/sources/auth_remote_source.dart';
@@ -77,6 +79,23 @@ class AuthController extends StateNotifier<AuthState> {
       : _repository = repository,
         super(const AuthState()) {
     _initialize();
+    checkStartupUserStatus();
+  }
+
+  /// Check if the user is deactivated at startup and update error state
+  Future<void> checkStartupUserStatus() async {
+    try {
+      final currentUser = await _repository.currentUser();
+      if (currentUser == null) {
+        final rawUser = fb.FirebaseAuth.instance.currentUser;
+        if (rawUser != null) {
+          state = state.copyWith(
+            errorMessage: AppConstants.accountDeactivatedMessage,
+            status: AuthUIStatus.error,
+          );
+        }
+      }
+    } catch (_) {}
   }
 
   /// Synchronize the active UserModel into this state notifier's state

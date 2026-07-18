@@ -167,7 +167,7 @@ class AdminDashboard extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         key: const ValueKey('admin_fab_add_employee'),
         onPressed: () {
-          context.push('/coming-soon/Add New Employee');
+          context.push('/admin/add-employee');
         },
         icon: const Icon(Icons.person_add_rounded),
         label: const Text('Add Employee'),
@@ -561,7 +561,7 @@ class AdminDashboard extends ConsumerWidget {
                   title: const Text('Employees'),
                   onTap: () {
                     context.pop();
-                    context.push('/coming-soon/Employee Directory');
+                    context.push('/admin/employees');
                   },
                 ),
                 ListTile(

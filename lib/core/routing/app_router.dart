@@ -8,10 +8,13 @@ import 'package:sum_enterprises/features/dashboard/presentation/screens/admin_da
 import 'package:sum_enterprises/features/dashboard/presentation/screens/employee_dashboard.dart';
 import 'package:sum_enterprises/features/placeholder/presentation/screens/coming_soon_screen.dart';
 import 'package:sum_enterprises/features/employee/presentation/screens/employee_details_screen.dart';
+import 'package:sum_enterprises/features/employee/presentation/screens/employee_directory_screen.dart';
+import 'package:sum_enterprises/features/employee/presentation/screens/add_employee_screen.dart';
 import 'package:sum_enterprises/features/attendance/domain/models/attendance_model.dart';
 import 'package:sum_enterprises/features/attendance/presentation/screens/admin_attendance_screen.dart';
 import 'package:sum_enterprises/features/attendance/presentation/screens/attendance_detail_screen.dart';
 import 'package:sum_enterprises/features/location/presentation/screens/location_history_screen.dart';
+import 'package:sum_enterprises/features/attendance/presentation/screens/employee_leave_screen.dart';
 
 // Keys for navigating without a BuildContext (e.g. from background messaging services)
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -86,6 +89,24 @@ final appRouterPro = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/employee/dashboard',
         builder: (context, state) => const EmployeeDashboard(),
+      ),
+
+      // Employee Leave Route
+      GoRoute(
+        path: '/employee/leave',
+        builder: (context, state) => const EmployeeLeaveScreen(),
+      ),
+
+      // Admin Employee Directory Route
+      GoRoute(
+        path: '/admin/employees',
+        builder: (context, state) => const EmployeeDirectoryScreen(),
+      ),
+
+      // Admin Add Employee Route
+      GoRoute(
+        path: '/admin/add-employee',
+        builder: (context, state) => const AddEmployeeScreen(),
       ),
 
       // Admin Employee Details Route

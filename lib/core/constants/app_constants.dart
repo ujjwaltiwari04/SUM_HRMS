@@ -10,6 +10,9 @@ class AppConstants {
   static const int maxEmployeesCount = 6;
   static const int maxAdminCount = 1;
 
+  // Shared error messages
+  static const String accountDeactivatedMessage = 'Your account has been deactivated. Please contact your administrator.';
+
   // Firebase Firestore Collection Names
   static const String collectionUsers = 'users';
   static const String collectionAttendance = 'attendance';

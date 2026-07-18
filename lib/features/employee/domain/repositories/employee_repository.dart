@@ -8,4 +8,13 @@ abstract class EmployeeRepository {
   /// Helper to add a new employee profile to Firestore corporate directory.
   /// Support optional temporary password for future server-side auth registration.
   Future<void> registerEmployee(UserModel employee, {String? tempPassword});
+
+  /// Update an existing employee profile in Firestore corporate directory.
+  Future<void> updateEmployee(UserModel employee);
+
+  /// Toggle an employee's active status.
+  Future<void> setEmployeeActiveStatus({
+    required String employeeUid,
+    required bool isActive,
+  });
 }

@@ -95,12 +95,13 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
     final todayAttendanceAsync = ref.watch(todayAttendanceStreamProvider);
     final actionState = ref.watch(attendanceActionControllerProvider);
     final todayAtt = todayAttendanceAsync.value;
-    final isNotCheckedIn = todayAtt == null;
-    final isCheckedIn = todayAtt != null && todayAtt.status == 'Checked In';
-    final isCheckedOut = todayAtt != null && todayAtt.status == 'Checked Out';
+    final isNotCheckedIn = todayAtt == null || todayAtt.status == 'Absent';
+    final isCheckedIn = todayAtt != null && todayAtt.status == 'Present' && todayAtt.checkInTime != null && todayAtt.checkOutTime == null;
+    final isCheckedOut = todayAtt != null && todayAtt.status == 'Present' && todayAtt.checkOutTime != null;
+    final isOnLeave = todayAtt != null && (todayAtt.status == 'Leave' || todayAtt.status == 'Half Day');
 
-    final isCheckInDisabled = isCheckedIn || isCheckedOut || actionState.isLoading;
-    final isCheckOutDisabled = isNotCheckedIn || isCheckedOut || actionState.isLoading;
+    final isCheckInDisabled = isCheckedIn || isCheckedOut || isOnLeave || actionState.isLoading;
+    final isCheckOutDisabled = isNotCheckedIn || isCheckedOut || isOnLeave || actionState.isLoading;
 
     // Greeting message computed by device clock
     String greeting() {
@@ -333,7 +334,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                   title: 'Apply Leave',
                   icon: Icons.pending_actions_rounded,
                   color: Colors.blue,
-                  route: '/coming-soon/Apply Leave',
+                  route: '/employee/leave',
                 ),
                 _buildActionCard(
                   context,
@@ -547,8 +548,8 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
   Widget _buildTodayStatusCard(ThemeData theme, AsyncValue<AttendanceModel?> todayAttendanceAsync) {
     return todayAttendanceAsync.when(
       data: (attendance) {
-        final isCheckedIn = attendance != null && attendance.status == 'Checked In';
-        final isCheckedOut = attendance != null && attendance.status == 'Checked Out';
+        final isCheckedIn = attendance != null && attendance.status == 'Present' && attendance.checkInTime != null && attendance.checkOutTime == null;
+        final isCheckedOut = attendance != null && attendance.status == 'Present' && attendance.checkOutTime != null;
         
         final checkInTimeStr = attendance?.checkInTime != null 
             ? DateFormat('hh:mm a').format(attendance!.checkInTime!) 
@@ -557,6 +558,25 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
             ? DateFormat('hh:mm a').format(attendance!.checkOutTime!) 
             : 'Pending';
         final workingHrsStr = attendance?.workingHours ?? 'Active Shift';
+
+        final String statusText;
+        if (attendance == null) {
+          statusText = 'NOT CHECKED IN';
+        } else if (attendance.status == 'Present') {
+          statusText = isCheckedIn ? 'CHECKED IN' : 'CHECKED OUT';
+        } else {
+          statusText = attendance.status.toUpperCase();
+        }
+
+        Color getBadgeColor() {
+          if (attendance == null) return Colors.amber;
+          if (attendance.status == 'Present') {
+            return isCheckedIn ? Colors.green : Colors.blueGrey;
+          }
+          if (attendance.status == 'Absent') return theme.colorScheme.error;
+          return Colors.purple; // Leave or Half Day
+        }
+        final badgeColor = getBadgeColor();
 
         return Card(
           key: const ValueKey('today_status_card_real'),
@@ -587,24 +607,16 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                       key: const ValueKey('today_status_badge'),
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: (isCheckedIn 
-                                ? Colors.green 
-                                : (isCheckedOut ? Colors.blueGrey : Colors.amber))
-                            .withOpacity(0.08),
+                        color: badgeColor.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: (isCheckedIn 
-                                  ? Colors.green 
-                                  : (isCheckedOut ? Colors.blueGrey : Colors.amber))
-                              .withOpacity(0.3),
+                          color: badgeColor.withOpacity(0.3),
                         ),
                       ),
                       child: Text(
-                        attendance?.status.toUpperCase() ?? 'NOT CHECKED IN',
+                        statusText,
                         style: TextStyle(
-                          color: isCheckedIn 
-                              ? Colors.green 
-                              : (isCheckedOut ? Colors.blueGrey : Colors.amber[800]),
+                          color: badgeColor == Colors.amber ? Colors.amber[800] : badgeColor,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),

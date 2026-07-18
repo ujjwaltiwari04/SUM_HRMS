@@ -83,8 +83,19 @@ class AttendanceHistoryScreen extends ConsumerWidget {
         ? DateFormat('hh:mm a').format(record.checkOutTime!) 
         : '--:--';
 
-    final isCheckedIn = record.status == 'Checked In';
-    final statusColor = isCheckedIn ? Colors.green : Colors.blueGrey;
+    final isCheckedIn = record.status == 'Present' && record.checkInTime != null && record.checkOutTime == null;
+    final isCheckedOut = record.status == 'Present' && record.checkOutTime != null;
+
+    Color statusColor = Colors.grey;
+    if (record.status == 'Present') {
+      statusColor = isCheckedIn ? Colors.green : Colors.blueGrey;
+    } else if (record.status == 'Absent') {
+      statusColor = theme.colorScheme.error;
+    } else if (record.status == 'Leave') {
+      statusColor = Colors.purple;
+    } else if (record.status == 'Half Day') {
+      statusColor = Colors.blue;
+    }
 
     // Accuracy helper
     final double? inAccuracy = record.checkInAccuracy;
@@ -118,22 +129,42 @@ class AttendanceHistoryScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-                Container(
-                  key: ValueKey('history_badge_${record.attendanceId}'),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: statusColor.withOpacity(0.3)),
-                  ),
-                  child: Text(
-                    record.status.toUpperCase(),
-                    style: TextStyle(
-                      color: statusColor,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      key: ValueKey('history_badge_${record.attendanceId}'),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: statusColor.withOpacity(0.3)),
+                      ),
+                      child: Text(
+                        record.status == 'Present'
+                            ? (isCheckedIn ? 'CHECKED IN' : 'CHECKED OUT')
+                            : record.status.toUpperCase(),
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  ),
+                    if (record.source == 'admin') ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.edit_calendar_rounded, size: 10, color: theme.colorScheme.primary),
+                          const SizedBox(width: 2),
+                          Text(
+                            'OVERRIDDEN',
+                            style: TextStyle(fontSize: 8, color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),

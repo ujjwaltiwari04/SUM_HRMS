@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:sum_enterprises/core/constants/app_constants.dart';
 import 'package:sum_enterprises/core/error/failures.dart';
 import 'package:sum_enterprises/features/auth/data/sources/auth_remote_source.dart';
 import 'package:sum_enterprises/features/auth/domain/models/user_model.dart';
@@ -64,7 +65,7 @@ class AuthRepositoryImpl implements AuthRepository {
       if (!userModel.isActive) {
         await _remoteSource.rawSignOut();
         throw const AuthFailure(
-          'Your corporate account has been deactivated. Please contact the administrator.',
+          AppConstants.accountDeactivatedMessage,
           code: 'deactivated',
         );
       }

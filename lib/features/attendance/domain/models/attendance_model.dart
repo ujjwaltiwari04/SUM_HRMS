@@ -14,10 +14,16 @@ class AttendanceModel {
   final double? checkOutLongitude;
   final double? checkInAccuracy;
   final double? checkOutAccuracy;
-  final String? workingHours; // e.g. "2 Hours 18 Minutes"
-  final String status; // "Checked In", "Checked Out"
+  final String status; // "Present", "Absent", "Leave", "Half Day"
+  final String? leaveId; // References approved leave request if created from a leave
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
+  // Admin Override Audit Fields
+  final String? source; // "admin" if overridden by admin
+  final String? overriddenBy; // Admin UID
+  final String? overrideReason; // Audit reason for manual override
+  final DateTime? overrideTimestamp; // Time when manual override took place
 
   const AttendanceModel({
     required this.attendanceId,
@@ -32,11 +38,24 @@ class AttendanceModel {
     this.checkOutLongitude,
     this.checkInAccuracy,
     this.checkOutAccuracy,
-    this.workingHours,
     required this.status,
+    this.leaveId,
     this.createdAt,
     this.updatedAt,
+    this.source,
+    this.overriddenBy,
+    this.overrideReason,
+    this.overrideTimestamp,
   });
+
+  /// Dynamically computes working hours from check-in and check-out timestamps
+  String? get workingHours {
+    if (checkInTime == null || checkOutTime == null) return null;
+    final difference = checkOutTime!.difference(checkInTime!);
+    final hours = difference.inHours;
+    final minutes = difference.inMinutes.remainder(60);
+    return hours == 0 ? '$minutes Minutes' : '$hours Hours $minutes Minutes';
+  }
 
   /// Factory constructors mapping from Firestore Document
   factory AttendanceModel.fromMap(Map<String, dynamic> map, String documentId) {
@@ -61,8 +80,8 @@ class AttendanceModel {
       checkOutLongitude: (map['checkOutLongitude'] as num?)?.toDouble(),
       checkInAccuracy: (map['checkInAccuracy'] as num?)?.toDouble(),
       checkOutAccuracy: (map['checkOutAccuracy'] as num?)?.toDouble(),
-      workingHours: map['workingHours'] as String?,
-      status: map['status'] as String? ?? 'Checked In',
+      status: map['status'] as String? ?? 'Present',
+      leaveId: map['leaveId'] as String?,
       createdAt: map['createdAt'] != null
           ? (map['createdAt'] is Timestamp 
               ? (map['createdAt'] as Timestamp).toDate() 
@@ -72,6 +91,14 @@ class AttendanceModel {
           ? (map['updatedAt'] is Timestamp 
               ? (map['updatedAt'] as Timestamp).toDate() 
               : DateTime.tryParse(map['updatedAt'].toString()))
+          : null,
+      source: map['source'] as String?,
+      overriddenBy: map['overriddenBy'] as String?,
+      overrideReason: map['overrideReason'] as String?,
+      overrideTimestamp: map['overrideTimestamp'] != null
+          ? (map['overrideTimestamp'] is Timestamp 
+              ? (map['overrideTimestamp'] as Timestamp).toDate() 
+              : DateTime.tryParse(map['overrideTimestamp'].toString()))
           : null,
     );
   }
@@ -90,10 +117,14 @@ class AttendanceModel {
       'checkOutLongitude': checkOutLongitude,
       'checkInAccuracy': checkInAccuracy,
       'checkOutAccuracy': checkOutAccuracy,
-      'workingHours': workingHours,
       'status': status,
+      'leaveId': leaveId,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
+      'source': source,
+      'overriddenBy': overriddenBy,
+      'overrideReason': overrideReason,
+      'overrideTimestamp': overrideTimestamp != null ? Timestamp.fromDate(overrideTimestamp!) : null,
     };
   }
 
@@ -111,10 +142,14 @@ class AttendanceModel {
     double? checkOutLongitude,
     double? checkInAccuracy,
     double? checkOutAccuracy,
-    String? workingHours,
     String? status,
+    String? leaveId,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? source,
+    String? overriddenBy,
+    String? overrideReason,
+    DateTime? overrideTimestamp,
   }) {
     return AttendanceModel(
       attendanceId: attendanceId ?? this.attendanceId,
@@ -129,10 +164,14 @@ class AttendanceModel {
       checkOutLongitude: checkOutLongitude ?? this.checkOutLongitude,
       checkInAccuracy: checkInAccuracy ?? this.checkInAccuracy,
       checkOutAccuracy: checkOutAccuracy ?? this.checkOutAccuracy,
-      workingHours: workingHours ?? this.workingHours,
       status: status ?? this.status,
+      leaveId: leaveId ?? this.leaveId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      source: source ?? this.source,
+      overriddenBy: overriddenBy ?? this.overriddenBy,
+      overrideReason: overrideReason ?? this.overrideReason,
+      overrideTimestamp: overrideTimestamp ?? this.overrideTimestamp,
     );
   }
 }
